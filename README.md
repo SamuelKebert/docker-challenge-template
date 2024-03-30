@@ -8,7 +8,7 @@
     
 2. **Dockerfile Configuration**:
     -  I wrote a Dockerfile to define the setup of the Docker container. This file specifies the official Nginx image as the base, copies the `index.html` file to the correct location within the container, and exposes port 80 for HTTP requests.
-	- ```
+
 ```
 FROM nginx
 COPY index.html /usr/share/nginx/html/index.html
@@ -17,7 +17,8 @@ EXPOSE 80
 
 1. **Docker Image Building**:
     - Using the command line from within directory, I ran the `docker build -t my-static-site .` command, which creates a Docker image named `my-static-site` based on the instructions in the Dockerfile.
-    ![[Screenshot 2024-03-25 at 9.13.38 PM.png]]
+<img width="1512" alt="Screenshot 2024-03-25 at 9 13 38 PM" src="https://github.com/SamuelKebert/docker-challenge-template/assets/118232574/ff5973c0-910b-435e-8683-7ef265b16f26">
+
 4. **Docker Container Launching**:
     - After building the image, I started a Docker container with the command `docker run --name my-static-website -d -p 8080:80 my-static-site`. This command assigns the container a name, runs it in detached mode, and maps port 8080 on my local machine to port 80 on the container.
     
