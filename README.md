@@ -24,11 +24,12 @@ EXPOSE 80
     
 5. **Web Server Testing**:
     - To verify the container was serving the web page correctly, I opened my web browser and navigated to `http://localhost:8080`. The `index.html` page loaded, confirming that Nginx was correctly serving the static content.
-    -![[Screenshot 2024-03-25 at 9.46.11 PM.png]]
+<img width="762" alt="Screenshot 2024-03-25 at 9 46 11 PM" src="https://github.com/SamuelKebert/docker-challenge-template/assets/118232574/e107e491-f571-4323-af60-fb271d495083">
+
 ## Challenge Two 
 1. **Dockerfile Creation:**
 	- Within the `challenge2` directory, I crafted a Dockerfile. The Dockerfile starts with specifying the Node.js image and proceeds with instructions to set up the application environment.
-	- ```
+
 ```
 FROM node:latest
 
@@ -108,7 +109,8 @@ ports:
     
 4. **Launching the Services:** 
 	- Using the command `docker-compose up --build`, I initiated the build process for the Docker image and subsequently started the Nginx and Node.js services. This command is pivotal as it compiles the application and makes it accessible through Nginx.
-    ![[Screenshot 2024-03-26 at 3.34.50 PM.png]]
+   <img width="971" alt="Screenshot 2024-03-26 at 3 34 50 PM" src="https://github.com/SamuelKebert/docker-challenge-template/assets/118232574/dceb7b12-de98-4e0e-b9e7-138c0b310c94">
+
 5. **Testing the Dynamic Application:** 
 	- To verify the application's functionality, I uses `http://localhost:8080/api/books` and `http://localhost:8080/api/books/1` from a web browser. The JSON responses confirmed the application was dynamically generating content and the reverse proxy was correctly routing the requests
-	![[Pasted image 20240330131736.png]]
+	<img width="744" alt="Screenshot 2024-03-30 at 2 41 32 PM" src="https://github.com/SamuelKebert/docker-challenge-template/assets/118232574/05e188de-555a-45ab-925f-450f64616c11">
