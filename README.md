@@ -114,3 +114,149 @@ ports:
 5. **Testing the Dynamic Application:** 
 	- To verify the application's functionality, I uses `http://localhost:8080/api/books` and `http://localhost:8080/api/books/1` from a web browser. The JSON responses confirmed the application was dynamically generating content and the reverse proxy was correctly routing the requests
 	<img width="744" alt="Screenshot 2024-03-30 at 2 41 32 PM" src="https://github.com/SamuelKebert/docker-challenge-template/assets/118232574/05e188de-555a-45ab-925f-450f64616c11">
+
+## Challenge Three
+
+1. **Set ENV File:**
+	- Create a .env file in the root directory of your project. This file will store all the environment variables your containers need for the docker-compose.
+```
+# Database Configuration for MariaDB
+MYSQL_ROOT_PASSWORD=
+MYSQL_DATABASE=
+MYSQL_USER=
+MYSQL_PASSWORD=
+MYSQL_HOST=
+
+# Application Database Configuration
+DB_ROOT_PASSWORD=
+DB_DATABASE=
+DB_USERNAME=         
+DB_PASSWORD=
+DB_HOST=
+
+```
+ 
+1. **Set Docker-Compose File:**
+	- Create and configure a docker-compose.yml file to define and link the services: nginx for web serving, node-service for the application backend, and db for the MariaDB database. These services were interconnected through a shared Docker network, facilitating seamless communication and data exchange.
+```
+version: '3.8'
+
+services:
+  nginx:
+    build: ./nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - node-service
+
+  node-service:
+    build: ./api
+    environment:
+      - "DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}"
+      - "DB_DATABASE=${DB_DATABASE}"
+      - "DB_USERNAME=${DB_USERNAME}"
+      - "DB_PASSWORD=${DB_PASSWORD}"
+      - "DB_HOST=${DB_HOST}"
+    depends_on:
+      - db
+
+  db:
+    build: ./db
+    environment:
+      - "MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}"
+      - "MYSQL_DATABASE=${MYSQL_DATABASE}"
+      - "MYSQL_USER=${MYSQL_USER}"
+      - "MYSQL_PASSWORD=${MYSQL_PASSWORD}"
+      - "MYSQL_HOST=${MYSQL_HOST}"
+    ports:
+      - "3307:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+
+volumes:
+  db-data:
+```
+
+3. **Adjuct Dockerfiles:**
+	-Refine the Dockerfiles in both the /api and /db directories to ensure essential configurations and dependencies are correctly incorporated into their respective Docker images. In the /api directory's Dockerfile, adjustments were made to include all necessary Node.js dependencies by copying the package.json and associated files. This setup guarantees that the application has all required modules when the container starts. Similarly, the Dockerfile for the database service in the /db directory was modified to correctly path database initialization scripts and configurations, ensuring MariaDB is properly configured upon launch. 
+4. **Testing:**
+	- Access the application by navigating to http://localhost:8080/api/books and http://localhost:8080/api/books/1 in a web browser. This URL is directed through the Nginx server, which is configured to proxy requests to the Node.js application running on a Docker-managed network.
+<img width="1512" alt="Screenshot 2024-04-23 at 10 16 46 AM" src="https://github.com/SamuelKebert/docker-challenge-template/assets/118232574/639be44a-ab5e-401b-a886-c00a63bcac02">
+
+<img width="1512" alt="Screenshot 2024-04-23 at 10 21 58 AM" src="https://github.com/SamuelKebert/docker-challenge-template/assets/118232574/5b1c4499-a436-474a-83a2-2f05712f199d">
+
+
+## Challenge Four 
+1. **Scaling Preparation:**
+	-Prepare node-service for horizontal scaling by configuring it to run multiple instances.Prepare node-service for horizontal scaling by configuring it to run multiple instances.
+```
+services:
+  node-service:
+    build: ./api
+    environment:
+      - "DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}"
+      - "DB_DATABASE=${DB_DATABASE}"
+      - "DB_USERNAME=${DB_USERNAME}"
+      - "DB_PASSWORD=${DB_PASSWORD}"
+      - "DB_HOST=${DB_HOST}"
+    deploy: 
+      replicas: 3 
+```
+
+3. **Ngnix Configuration:**
+	-Configure Nginx to distribute incoming traffic evenly across multiple instances of node-service. Modify the nginx.conf to define an upstream server block and update the server configuration to proxy requests to this upstream
+```
+events {
+    worker_connections  1024;
+}
+
+http {
+    resolver 127.0.0.11 valid=5s;  # Docker's internal DNS server for service discovery
+
+    upstream loadbalancer {
+        server node-service:8080;  # Points to the Node.js service
+    }
+
+    server {
+        listen 80;
+        server_name localhost;
+
+        location / {
+            root /usr/share/nginx/html;  # Serve static files from here
+            index index.html index.htm;
+            try_files $uri $uri/ =404;  # Attempt to serve file directly or return 404
+        }
+
+        location /api {
+            proxy_pass http://loadbalancer;  # Proxy API requests to Node.js
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host $host;
+            proxy_cache_bypass $http_upgrade;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+    }
+}
+```
+
+5. **Testing:** 
+	-Use the Docker Compose command to launch multiple instances of your application. By executing the command below, you will initiate three instances of the node-service
+```
+docker-compose up --scale node-service=3 -d
+```
+<img width="583" alt="Screenshot 2024-04-24 at 5 42 24 PM" src="https://github.com/SamuelKebert/docker-challenge-template/assets/118232574/58481137-cbcb-4194-ac51-5e5477e568dd">
+	- : Perform multiple HTTP GET requests to the endpoint by executing
+```
+ http://localhost:8080/api/stats
+```
+	- This endpoint returns the hostname or container ID, providing a clear indication of which node-service instance processed each request.
+ 
+<img width="1512" alt="Screenshot 2024-04-23 at 2 55 16 PM" src="https://github.com/SamuelKebert/docker-challenge-template/assets/118232574/9b8b414a-361f-4c73-aebb-5a872e76fe2c">
+
+
